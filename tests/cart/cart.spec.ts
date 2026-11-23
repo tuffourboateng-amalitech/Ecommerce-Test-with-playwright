@@ -2,7 +2,7 @@
  * Cart tests (demo suite for flaky-test triage).
  *
  *  - stable:  passes every time
- *  - FLAKY:   the page is very slow on the first attempt only (simulated delay), so the test times out
+ *  - FLAKY:   in about half the runs the page is very slow on the first attempt (simulated delay), so the test times out
  *             once and passes on retry - like a busy CI runner or slow test environment
  *  - FAILING: uses a button id that no longer exists on the site, so it fails on every attempt -
  *             like a test that broke after a UI change
@@ -20,8 +20,8 @@ test.describe("Cart", () => {
   });
 
   test("opens the cart on a slow environment", async ({ page }) => {
-    if (test.info().retry === 0) {
-      // fault injection: the first attempt waits 15 s for the page (longer than the 10 s budget below)
+    if (test.info().retry === 0 && Math.random() < 0.5) {
+      // fault injection: in ~half the runs, the first attempt waits 15 s (longer than the 10 s budget below)
       await page.route("**/index.php?rt=checkout/cart*", async (route) => {
         await new Promise((resolve) => setTimeout(resolve, 15000));
         await route.continue().catch(() => {});

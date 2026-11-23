@@ -2,8 +2,8 @@
  * Product page tests (demo suite for flaky-test triage).
  *
  *  - stable:  passes every time
- *  - FLAKY:   the server answers "503 Service Unavailable" on the first attempt only (simulated),
- *             so it fails once and passes on retry - like a backend hiccup during deployment
+ *  - FLAKY:   in about half the runs the server answers "503 Service Unavailable" on the first attempt (simulated),
+ *             then it passes on retry - like an occasional backend hiccup
  *  - FAILING: expects a product name that doesn't match the page, on every attempt - like a regression
  */
 import { test, expect } from "@playwright/test";
@@ -17,8 +17,8 @@ test.describe("Product page", () => {
   });
 
   test("loads while the backend is briefly unavailable", async ({ page }) => {
-    if (test.info().retry === 0) {
-      // fault injection: the first attempt gets a 503 from the server
+    if (test.info().retry === 0 && Math.random() < 0.5) {
+      // fault injection: in ~half the runs, the first attempt gets a 503 from the server
       await page.route("**/index.php?rt=product/product*", (route) =>
         route.fulfill({ status: 503, contentType: "text/html", body: "<h1>503 Service Unavailable</h1>" })
       );
